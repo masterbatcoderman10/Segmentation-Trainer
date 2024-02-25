@@ -3,6 +3,9 @@ from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 from utils import Dice
+import torch.nn as nn
+import time
+import math
 
 class Trainer:
 
@@ -26,6 +29,8 @@ class Trainer:
 
         self.n_classes = n_classes
         self.multi = True if n_classes > 1 else False
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        
     
     def early_stop(self, metric, mode=0):
         
@@ -64,7 +69,7 @@ class Trainer:
         #Make model prediction
         pred = self.model(img_batch)
         
-        target_batch = target_batch.float().to(device)
+        target_batch = target_batch.float().to(self.device)
             
         #Compute Loss
         loss = self.loss_function(pred, target_batch)
@@ -80,7 +85,7 @@ class Trainer:
         #Assumes the model is already put into evaluation mode
         val_pred = self.model(img_batch)
             
-        target_batch = target_batch.float().to(device)
+        target_batch = target_batch.float().to(self.device)
 
         #Compute Loss
         loss = self.loss_function(val_pred, target_batch)
@@ -94,6 +99,7 @@ class Trainer:
         """
         assert self.n_classes > 0
         multi = False if self.n_classes == 1 else True
+        cmap = 'rainbow' if multi else 'gray'
         #Initializing the softmax and the sigmoid
         softmax = nn.Softmax(dim=0)
         sigmoid = nn.Sigmoid()
@@ -172,13 +178,13 @@ class Trainer:
         ax[0].imshow(n_img)
         ax[0].axis("off")
         #Plotting the annotation
-        ax[1].imshow(n_ann, cmap='rainbow')
+        ax[1].imshow(n_ann, cmap=cmap)
         ax[1].axis("off")
         #Plotting the prediction
-        ax[2].imshow(n_pred, cmap='rainbow')
+        ax[2].imshow(n_pred, cmap=cmap)
         ax[2].axis("off")
         #Plotting a thresholded prediction
-        ax[3].imshow(n_pred_clamped, cmap='rainbow')
+        ax[3].imshow(n_pred_clamped, cmap=cmap)
         ax[3].axis("off")
         plt.show()
 
@@ -248,7 +254,22 @@ class Trainer:
         plt.show()
     
     def fit(self, log=True, validation=False, valid_dl=None, model_checkpoint=True, model_save_path="./model.pth"):
-        
+        """
+        Trains the segmentation model.
+
+        Args:
+            log (bool, optional): Whether to log the training progress. Defaults to True.
+            validation (bool, optional): Whether to perform validation during training. Defaults to False.
+            valid_dl (torch.utils.data.DataLoader, optional): Validation data loader. Required if validation is enabled. Defaults to None.
+            model_checkpoint (bool, optional): Whether to save the best model based on validation loss. Defaults to True.
+            model_save_path (str, optional): Path to save the trained model. Defaults to "./model.pth".
+
+        Raises:
+            AssertionError: If validation is enabled but no validation data loader is provided or if the validation data loader is not a PyTorch DataLoader object.
+
+        Returns:
+            None
+        """
         training_losses = []
         validation_losses = []
         best_val_loss = float('inf') * -1.0
@@ -273,8 +294,8 @@ class Trainer:
             for img_batch, annotation_batch in self.train_dl:
                 
                 total_batches += 1
-                #Putting the images and annotations on the device
-                img_batch = img_batch.to(device)
+                #Putting the images and annotations on the self.device
+                img_batch = img_batch.to(self.device)
                 #Obtaining the loss and the predictions for current batch - This is multiclass classification
                     
                 loss, pred = self.main_step(img_batch, annotation_batch)
@@ -286,7 +307,7 @@ class Trainer:
                     #Indicate that next batch is not start of epoch
                     if self.multi:
                         print(f"Plotting Activations")
-                        self.plot_class_activations(annotation_batch.to(device), pred)
+                        self.plot_class_activations(annotation_batch.to(self.device), pred)
                     start = False
                 
                 #Updating loss by adding loss for current batch  
@@ -320,11 +341,11 @@ class Trainer:
                     for img_batch, annotation_batch in valid_dl:
                         
                         val_batches += 1
-                        val_img_batch = img_batch.to(device)
+                        val_img_batch = img_batch.to(self.device)
                         
                         valid_loss, val_pred = self.eval_step(val_img_batch, annotation_batch)
                         #Compute the dice metric
-                        val_dice_score += self.dice(val_pred, annotation_batch.float().to(device)).item()
+                        val_dice_score += self.dice(val_pred, annotation_batch.float().to(self.device)).item()
                         
                         if val_start:
                             self.plot_sample_prediction(val_img_batch, annotation_batch, val_pred, 0, background=True)
@@ -390,10 +411,13 @@ class Trainer:
         plt.plot(epochs, training_losses, 'r-', label='Training Loss', linewidth=2)
 
         # Plot the validation loss
-        plt.plot(epochs, validation_losses, 'b--', label='Validation Loss', linewidth=2)
-
-        # Set the title and labels
-        plt.title('Training and Validation Loss')
+        if validation:
+            plt.plot(epochs, validation_losses, 'b--', label='Validation Loss', linewidth=2)
+            # Set the title and labels
+            plt.title('Training and Validation Loss')
+        else:
+            plt.title("Training Loss")
+            
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
 
