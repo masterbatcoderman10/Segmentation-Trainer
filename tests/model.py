@@ -175,7 +175,6 @@ class VGGUNet(nn.Module, BaseModel):
         for param in self.vgg.parameters():
             param.requires_grad = False
             
-        self.vgg = self.vgg.to(device)
         self.activations = []
 
         self.filters = [512, 256, 128, 64]

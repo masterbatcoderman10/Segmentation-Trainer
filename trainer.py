@@ -305,7 +305,7 @@ class Trainer:
                 if start:
                     self.plot_sample_prediction(img_batch, annotation_batch, pred, 0, background=True)
                     #Indicate that next batch is not start of epoch
-                    if self.multi:
+                    if self.multi and self.n_classes <= 5:
                         print(f"Plotting Activations")
                         self.plot_class_activations(annotation_batch.to(self.device), pred)
                     start = False

@@ -100,7 +100,7 @@ class MultiSegmentationDataset(Dataset):
 
     """
 
-    def __init__(self, image_dir, mode = 0 | 1 | 2, mask_dir=None, masks_dict=None, transform=None, classes=None):
+    def __init__(self, image_dir, mode = 0 | 1 | 2, mask_dir=None, masks_dict=None, transform=None, mask_transform=None,classes=None):
         """
     MultiSegmentationDataset Class for handling multi-class segmentation datasets.
 
@@ -122,6 +122,7 @@ class MultiSegmentationDataset(Dataset):
         self.image_dir = image_dir
         self.mask_dir = mask_dir
         self.transform = transform
+        self.mask_transform = mask_transform
         self.mode = mode
         self.masks_dict = masks_dict
         self.images = os.listdir(image_dir)
@@ -167,6 +168,11 @@ class MultiSegmentationDataset(Dataset):
         """
 
         mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+
+        if self.mask_transform:
+            mask = self.mask_transform(mask)
+            mask = mask.numpy() 
+
         #assert mask only has 2 dimensions, if not then squeeze
         if len(mask.shape) > 2:
             mask = np.squeeze(mask)
@@ -260,11 +266,12 @@ class MultiSegmentationDataset(Dataset):
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         else:
             image = np.expand_dims(image, axis=-1) 
-        image = image.transpose(2, 0, 1)
+        
         #apply transforms
         if self.transform is not None:
             image = self.transform(image)
         else:
+            image = image.transpose(2, 0, 1)
             image = torch.tensor(image, dtype=torch.float32)
         
         #process mask

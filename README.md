@@ -88,3 +88,4 @@ trainer.fit(
 
 - Support for external metrics
 - Support for logging validation metrics other than the loss
+- Support for TQDM
