@@ -10,6 +10,7 @@ This repository provides a comprehensive model trainer for image segmentation. T
 - [Usage](#usage)
 - [Improvements](#improvements)
 - [Usage](#usage)
+- [Demonstration](#demonstration)
 
 ## Installation
 
@@ -83,6 +84,12 @@ trainer.fit(
     model_save_path='model.pth', # Optional - Defaults to "./model.pth", if set, the model will be saved to the specified path.
 )
 ```
+
+## Demonstration
+
+If you'd like to view and try out the segmentation trainer, you can find examples for both binary and multi-class segmentation in the `/tests` directory. These are comprehensive examples that fully demonstrate the capability of the trainer.
+
+As a bonus you can also find a specialized U-Net using a VGG network as the encoder, as well as some loss functions.
 
 ## Improvements
 
