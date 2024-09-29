@@ -48,7 +48,7 @@ In order to use the trainer, a few requirements must be met:
 - `model`: A PyTorch model that outputs a tensor of the same shape as the ground truth mask.
 - `train_dl`: A PyTorch training dataloader that must return a batch of images and corresponding masks.
     - You may use the [Segmentation Dataset](!https://github.com/masterbatcoderman10/Segmentation-Datasets/tree/main) helper classes defined in the mentioned repository. An example of this usage is shown in the tests/trainer_run.ipynb notebook.
-- `loss_function`: A loss function that works on 3-D tensors, and returns a single scalar value.
+- `loss_function`: A loss function that operates on 3-D tensors, and returns a single scalar value.
 - `optimizer`: A PyTorch optimizer.
 
 In addition to the requirements above, the following requirements may be specified in order to use additional features:
